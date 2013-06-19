@@ -21,7 +21,7 @@ echo "`date`: Fetching new calcentral.knob..." | $LOGIT
 curl -k $WAR_URL > calcentral.knob
 
 echo "Unzipping knob..." | $LOGIT
-unzip -o calcentral.knob
+jar xvf calcentral.knob
 echo "Last commit in calcentral.knob:" | $LOGIT
 cat versions/git.txt | $LOGIT
 

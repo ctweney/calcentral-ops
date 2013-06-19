@@ -1,0 +1,9 @@
+# Ignore IDE settings.
+.idea/
+*.iml
+
+/log/*.log
+/log/*.gz
+/tmp
+/deploy
+

@@ -1,0 +1,125 @@
+#!/bin/bash
+# Startup script for calcentral
+# chkconfig: 2345 90 05
+# description: start script for calcentral
+# processname: calcentral
+
+# Customize the following variables
+RUN_AS_USER="app_calcentral"
+CC_BASE="$HOME/calcentral-ops"
+START_SCRIPT="$CC_BASE/script/start-torquebox.sh"
+STOP_SCRIPT="$CC_BASE/script/stop-torquebox.sh"
+DOCROOT="/var/www/html/calcentral"
+OFFLINE_FILE="$DOCROOT/calcentral-in-maintenance"
+NIGHTLY_HTML="$DOCROOT/index_nightly.html"
+MAINT_HTML="$DOCROOT/index_maintenance.html"
+EMERGENCY_HTML="$DOCROOT/index_emergency.html"
+INDEX_HTML="$DOCROOT/index.html"
+RM="/bin/rm"
+CP="/bin/cp -p"
+TOUCH="/bin/touch"
+HOSTNAME=`uname -n`
+
+if [ -x "/usr/bin/id" ]; then
+  CURR_USER=`/usr/bin/id -u -n`
+else
+  CURR_USER="$USER"
+fi
+
+if [ $CURR_USER != "$RUN_AS_USER" ]; then
+  echo "Only $RUN_AS_USER can execute this script"
+  exit 1
+fi
+
+if [[ "${HOSTNAME}" = ets-calcentral-*-01\.ist.berkeley.edu ]]; then
+  NODEONE="yes"
+fi
+
+online() {
+    if [ -f $OFFLINE_FILE ]; then
+      $RM $OFFLINE_FILE
+    fi
+}
+
+offline () {
+    $TOUCH $OFFLINE_FILE
+}
+
+nightly () {
+    $CP $NIGHTLY_HTML $INDEX_HTML
+    offline
+}
+
+maint () {
+    $CP $MAINT_HTML $INDEX_HTML
+    offline
+}
+
+emergency () {
+    $CP $EMERGENCY_HTML $INDEX_HTML
+    offline
+}
+
+start() {
+  if [ ! -x "$START_SCRIPT" ]; then
+    echo "$START_SCRIPT doesn't exist or is not executable"
+    exit 1
+  fi
+  echo "Starting calcentral..."
+  $START_SCRIPT || exit 1
+}
+
+stop() {
+  if [ ! -x "$STOP_SCRIPT" ]; then
+    echo "$STOP_SCRIPT doesn't exist or is not executable"
+    exit 1
+  fi
+  echo "Shutting down calcentral..."
+  $STOP_SCRIPT
+}
+
+status() {
+  # The return value of this function may be used by other scripts
+  JPS_RESULTS=`jps -mlv | grep torquebox | cut -d ' ' -f 1`
+  if [ -n "$JPS_RESULTS" ]; then
+    echo "PID: $JPS_RESULTS"
+  else
+    echo "PID: no pid found"
+  fi
+}
+
+case "$1" in
+  start)
+        start
+        ;;
+  stop)
+        stop
+        ;;
+  restart)
+        stop
+        sleep 10
+        start
+        ;;
+  status)
+        status
+        ;;
+  online)
+        online
+        ;;
+  offline)
+        offline
+        ;;
+  nightly)
+        nightly
+        ;;
+  maint)
+        maint
+        ;;
+  emergency)
+        emergency
+        ;;
+  *)
+        echo "Usage: $0 {start|stop|restart|status|online|offline|nightly|maint|emergency}"
+esac
+
+exit
